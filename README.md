@@ -20,7 +20,7 @@
 作者主页：<https://shawaner.com>
 
 
-## 许可协议
+## License
 
-该项目将采用与 WordPress 一样的许可协议，详情请参见 [license.txt](./license.txt) 。
+该项目将采用与 WordPress 一致的许可协议，详情请参见 [license.txt](./license.txt) 。
 
