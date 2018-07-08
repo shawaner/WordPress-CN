@@ -18,6 +18,14 @@
  * @package WordPress
  */
 
+# 此文件作为指导用户配置 wp-config.php 的示例文件（参见“著名的5分安装” - https://codex.wordpress.org/zh-cn:%E5%AE%89%E8%A3%85_WordPress）。
+# 其中主要包括：
+# 1. 用户自定义配置，例如：配置数据库信息、调试模式等；
+# 2. 加载 wp-settings.php 文件（用于加载和配置其它内容）。
+# 
+# 导读： index.php -> wp-blog-header.php -> wp-load.php -> wp-config-sample.php -> wp-settings.php
+
+# 配置数据库信息
 // ** MySQL settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
 define('DB_NAME', 'database_name_here');
@@ -37,6 +45,8 @@ define('DB_CHARSET', 'utf8');
 /** The Database Collate type. Don't change this if in doubt. */
 define('DB_COLLATE', '');
 
+# 此部分内容可通过访问如下链接获取：
+#   https://api.wordpress.org/secret-key/1.1/salt/
 /**#@+
  * Authentication Unique Keys and Salts.
  *
@@ -57,6 +67,8 @@ define('NONCE_SALT',       'put your unique phrase here');
 
 /**#@-*/
 
+# 初次安装时，会在前面指定的数据库中创建一系列的表（tables）。
+# $table_prefix 用于配置“表名”的前缀，默认使用“wp_”前缀。
 /**
  * WordPress Database Table prefix.
  *
