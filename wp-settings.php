@@ -8,23 +8,28 @@
  * @package WordPress
  */
 
+# 导读： index.php -> wp-blog-header.php -> wp-load.php -> wp-config-sample.php -> wp-settings.php -> ...
+
 /**
  * Stores the location of the WordPress directory of functions, classes, and core content.
  *
  * @since 1.0.0
  */
+# 定义常量 WPINC ，它用于表示 wp-includes 子目录路径，后续代码中会经常用到
 define( 'WPINC', 'wp-includes' );
 
 // Include files required for initialization.
+# 加载初始化所需的文件，这些文件中包含大量函数定义，阅读时可暂时跳过，等调用到某个具体函数时再进入参阅
 require( ABSPATH . WPINC . '/load.php' );
-require( ABSPATH . WPINC . '/default-constants.php' );
-require_once( ABSPATH . WPINC . '/plugin.php' );
+require( ABSPATH . WPINC . '/default-constants.php' ); # 其中的函数用于定义常量（PHP允许 函数中 定义的常量在 函数外 使用）
+require_once( ABSPATH . WPINC . '/plugin.php' ); # 定义了 Hook 相关的全局变量（如： $wp_filter, $wp_actions 等）和函数，并导入了 WP_Hook 类
 
 /*
  * These can't be directly globalized in version.php. When updating,
  * we're including version.php from another installation and don't want
  * these values to be overridden if already set.
  */
+# 声明版本相关全局变量，这些变量在 wp-includes/version.php 中定义
 global $wp_version, $wp_db_version, $tinymce_version, $required_php_version, $required_mysql_version, $wp_local_package;
 require( ABSPATH . WPINC . '/version.php' );
 
@@ -38,14 +43,29 @@ require( ABSPATH . WPINC . '/version.php' );
 global $blog_id;
 
 // Set initial default constants including WP_MEMORY_LIMIT, WP_MAX_MEMORY_LIMIT, WP_DEBUG, SCRIPT_DEBUG, WP_CONTENT_DIR and WP_CACHE.
+# 设置常量默认初始值（部分常量已经在之前定义过了，此处仅为未初始化的常量设置默认值），
+# 包括： size、时间、模式（如：WP_DEBUG、WP_DEBUG_DISPLAY、WP_DEBUG_LOG）等相关常量
 wp_initial_constants();
 
 // Check for the required PHP version and for the MySQL extension or a database drop-in.
+# 检查 PHP 版本（要求高于 v5.2.4 的版本）及是否安装了 MySQL 扩展（WordPress 需要使用数据库来存储文章、用户配置等内容）
 wp_check_php_mysql_versions();
 
 // Disable magic quotes at runtime. Magic quotes are added using wpdb later in wp-settings.php.
+# 修改（覆盖）通过加载 php.ini 获得的用户配置值
 @ini_set( 'magic_quotes_runtime', 0 );
 @ini_set( 'magic_quotes_sybase',  0 );
+# PHP 科普：
+#   通常，我们想到的 用户配置 都是通过配置文件 php.ini 来设定的，但实际上 PHP 支持多种配置模式（每一项配置都有其所属的配置模式）：
+#   - PHP_INI_USER   模式，属于此种模式的配置项可在用户脚本中用 ini_set() 来设定；
+#   - PHP_INI_PERDIR 模式，属于此种模式的配置项可在 php.ini，.htaccess 或 httpd.conf 中设定；
+#   - PHP_INI_SYSTEM 模式，属于此种模式的配置项可在 php.ini 或 httpd.conf 中设定；
+#   - PHP_INI_ALL    模式，属于此种模式的配置项可在任何地方设定。（上面两个配置项 magic_quotes_runtime 和 magic_quotes_sybase 便属于此种模式）
+#
+# 参考链接：
+#   关于配置模式请参考： http://php.net/manual/zh/configuration.changes.modes.php
+#   关于 php.ini 中可配置的配置项列表请参考： http://php.net/manual/zh/ini.list.php
+#   关于 ini_set() 函数请参考： http://php.net/manual/zh/function.ini-set.php
 
 // WordPress calculates offsets from UTC.
 date_default_timezone_set( 'UTC' );
