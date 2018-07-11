@@ -240,6 +240,8 @@ function wp_maintenance() {
  */
 function timer_start() {
 	global $timestart;
+	# microtime() 函数默认情况下返回当前 Unix 时间戳和微秒数（两个值，以字符串形式返回）
+	# 参数 $get_as_float 指示是否仅返回一个浮点数时间戳（例如：1531265635.285）
 	$timestart = microtime( true );
 	return true;
 }

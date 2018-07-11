@@ -19,7 +19,7 @@
 define( 'WPINC', 'wp-includes' );
 
 // Include files required for initialization.
-# 加载初始化所需的文件，这些文件中包含大量函数定义，阅读时可暂时跳过，等调用到某个具体函数时再进入参阅
+# 加载初始化所需的文件，这些文件中包含大量函数定义，阅读时可暂时跳过，等调用到某个具体函数时再行参阅
 require( ABSPATH . WPINC . '/load.php' );
 require( ABSPATH . WPINC . '/default-constants.php' ); # 其中的函数用于定义常量（PHP允许 函数中 定义的常量在 函数外 使用）
 require_once( ABSPATH . WPINC . '/plugin.php' ); # 定义了 Hook 相关的全局变量（如： $wp_filter, $wp_actions 等）和函数，并导入了 WP_Hook 类
@@ -68,6 +68,7 @@ wp_check_php_mysql_versions();
 #   关于 ini_set() 函数请参考： http://php.net/manual/zh/function.ini-set.php
 
 // WordPress calculates offsets from UTC.
+# 设置默认时区（参数可以是 UTC 时间，也可以是"Asia/Shanghai"等，合法的时区列表可参考： http://php.net/manual/zh/timezones.php）
 date_default_timezone_set( 'UTC' );
 
 // Turn register_globals off.
@@ -77,12 +78,16 @@ wp_unregister_GLOBALS();
 wp_fix_server_vars();
 
 // Check if we have received a request due to missing favicon.ico
+# 像“GET /favicon.ico HTTP/1.1”这样的静态资源请求，应该不需要 WordPress 来处理的
 wp_favicon_request();
 
 // Check if we're in maintenance mode.
+# 检查 WordPress 是否处于维护模式（安装 WordPress 的过程不算维护模式），如何近处维护模式可查看：
+#   https://www.wpbeginner.com/plugins/how-to-put-your-wordpress-site-in-maintenance-mode/
 wp_maintenance();
 
 // Start loading timer.
+# 记录起始时间（设置全局变量 $timestart 的值）
 timer_start();
 
 // Check if we're in WP_DEBUG mode.

@@ -92,6 +92,13 @@ $table_prefix  = 'wp_';
  */
 # 是否启用“开发者模式”
 define('WP_DEBUG', false);
+# 补充说明：
+#   WordPress 中有三个用于控制调试信息输出的常量： WP_DEBUG, WP_DEBUG_DISPLAY 和 WP_DEBUG_LOG
+#   - WP_DEBUG 默认为 false ，设置为 true 时，用于是否输出所有 PHP 通知消息（notices）
+#   - WP_DEBUG_DISPLAY 默认为 true ，用于控制是否强制输出错误
+#   - WP_DEBUG_LOG 默认为 false，用于控制是否将错误消息输出到 debug.log 中
+#   其中 WP_DEBUG_DISPLAY 和 WP_DEBUG_LOG 都只有在 WP_DEBUG 为 true 时才生效。
+#   更多描述请参看 wp-includes/load.php 文件 wp_debug_mode() 注释信息。
 
 /* That's all, stop editing! Happy blogging. */
 

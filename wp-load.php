@@ -81,6 +81,7 @@ if ( file_exists( ABSPATH . 'wp-config.php') ) {
 	 * in an infinite loop, that's a silly thing to assume, don't you think? If
 	 * we're traveling in circles, our last-ditch effort is "Need more help?"
 	 */
+	# 重定向到 /wp-admin/setup-config.php ，启动安装向导页面
 	if ( false === strpos( $_SERVER['REQUEST_URI'], 'setup-config' ) ) {
 		header( 'Location: ' . $path );
 		exit;
