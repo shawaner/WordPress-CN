@@ -91,6 +91,9 @@ wp_maintenance();
 timer_start();
 
 // Check if we're in WP_DEBUG mode.
+# 检查 DEBUG 模式及其相关配置，并根据这些配置调整 PHP 错误报告级别（Error Reporting）。
+# 关于 PHP 错误报告级别可参考：
+#    http://php.net/manual/zh/errorfunc.constants.php
 wp_debug_mode();
 
 /**

@@ -21,10 +21,40 @@
  * @since 1.5.0
  */
 
+# 此文件中主要包含一系列 插件（Plugin）相关 API 。
+#
+# 在 WordPress 中 插件 是通过 Hook 机制实现的，WordPress 中的 Hook 又分为两类：
+# 1. Actions：允许添加数据内容或改变 WordPress 原操作行为，例如：输出内容给用户，向数据库中插入数据等。
+# 2. Filters：较为独立的过程，接受输入，产生输出（例如：装饰输出给用户的内容），但不允许修改全局变量。
+#
+# 其中重点阅读以下几个 API：
+# - add_filter()    : 注册一个 Filter
+# - apply_filters() :
+# - add_action()    :
+# - do_action()     :
+#
+# 如果你不熟悉 Hook 机制，可以这样理解：
+#   Hook 的中文就是鱼钩、钩子，你在鱼钩上挂上不同的诱饵，就能钓到不同种类的鱼。
+#   不同的 Actions 或 Filters 就像不同的诱饵，
+#   - 你将它们挂在鱼钩上（调用 add_filter() 或 add_action()）
+#   - 待鱼咬钩时起竿收鱼（调用 apply_filters() 或 do_action()）
+#   一个 Hook 上可以有多个“钩”，像这样的：
+#   	https://assets.academy.com/mgen/42/10065442.jpg
+#
+# 关于 Hook 的更多描述请参考：
+#    https://developer.wordpress.org/plugins/hooks/
+
 // Initialize the filter globals.
+# 加载 includes/class-wp-hook.php 文件，其中定义了 WP_Hook 类（class）。
+# WP_Hook 类实现了 Hook 对象的存储结构和访问方法（单个 Hook 对象中可以包含多个 Actions 或 Filters，
+#   它们的执行顺序为：
+#   1. 先执行优先级高的 Actions 或 Filters
+#   2. 相同优先级的 Actions 或 Filters，按添加（注册）顺序依次执行
+# ）
 require( dirname( __FILE__ ) . '/class-wp-hook.php' );
 
 /** @var WP_Hook[] $wp_filter */
+# 定义全局变量： $wp_filter, $wp_actions 和 $wp_current_filter 数组类型，用于存储所有的 Hook 对象
 global $wp_filter, $wp_actions, $wp_current_filter;
 
 if ( $wp_filter ) {
@@ -103,6 +133,8 @@ if ( ! isset( $wp_current_filter ) )
  * @param int      $accepted_args   Optional. The number of arguments the function accepts. Default 1.
  * @return true
  */
+# add_filter() 用于注册一个 filter ，其参数说明如下：
+# - $tag 用于标识一个 Hook ，多个 Actions 或 Filters 可以挂在同一个 Hook 上
 function add_filter( $tag, $function_to_add, $priority = 10, $accepted_args = 1 ) {
 	global $wp_filter;
 	if ( ! isset( $wp_filter[ $tag ] ) ) {
