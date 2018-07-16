@@ -38,7 +38,7 @@
 #   不同的 Actions 或 Filters 就像不同的诱饵，
 #   - 你将它们挂在鱼钩上（调用 add_filter() 或 add_action()）
 #   - 待鱼咬钩时起竿收鱼（调用 apply_filters() 或 do_action()）
-#   一个 Hook 上可以有多个“钩”，像这样的：
+#   一个 Hook （鱼钩）上可以有多个“钩”，像这样的：
 #   	https://assets.academy.com/mgen/42/10065442.jpg
 #
 # 关于 Hook 的更多描述请参考：
@@ -134,12 +134,16 @@ if ( ! isset( $wp_current_filter ) )
  * @return true
  */
 # add_filter() 用于注册一个 filter ，其参数说明如下：
-# - $tag 用于标识一个 Hook ，多个 Actions 或 Filters 可以挂在同一个 Hook 上
+# - $tag: 用于标识一个 Hook ，多个 Actions 或 Filters 可以挂在同一个 Hook 上
+# - $function_to_add: 回调函数，当执行 apply_filters() 时，该 filter 的回调函数会被调用
+# - $priority: 优先级(值越小，优先级越高)，用于控制同一个 Hook 中多个 filters 的回调函数的执行顺序
+# - $accepted_args: 回调函数的参数个数
 function add_filter( $tag, $function_to_add, $priority = 10, $accepted_args = 1 ) {
 	global $wp_filter;
 	if ( ! isset( $wp_filter[ $tag ] ) ) {
-		$wp_filter[ $tag ] = new WP_Hook();
+		$wp_filter[ $tag ] = new WP_Hook(); # $wp_filter 这个全局数组来存储所有的 Hooks
 	}
+	# filter 相关的信息记录在 Hook 对象中
 	$wp_filter[ $tag ]->add_filter( $tag, $function_to_add, $priority, $accepted_args );
 	return true;
 }
@@ -160,6 +164,9 @@ function add_filter( $tag, $function_to_add, $priority = 10, $accepted_args = 1 
  *                   that evaluates to false (e.g.) 0, so use the === operator for testing the
  *                   return value.
  */
+# 判断某个 filter 信息是否已注册
+# 如果 $function_to_check 为 false ，则检查挂在该 Hook 下所有 filters ：
+#    是否存在包含回调函数的 filter
 function has_filter($tag, $function_to_check = false) {
 	global $wp_filter;
 
@@ -205,6 +212,7 @@ function has_filter($tag, $function_to_check = false) {
  * @param mixed  $var,... Additional variables passed to the functions hooked to `$tag`.
  * @return mixed The filtered value after all hooked functions are applied to it.
  */
+# 调用注册时绑定在 filter hook 上的回调函数
 function apply_filters( $tag, $value ) {
 	global $wp_filter, $wp_current_filter;
 
@@ -912,11 +920,15 @@ function _wp_call_all_hook($args) {
  *                      and $function is an object reference, and it does not already have
  *                      a unique id.
  */
+# 从 WordPress 源码中搜索 _wp_filter_build_unique_id ，你会发现它只有在 wp-includes/class-wp-hook.php 中 3 处被调用：
+# 1. add_filter()	 用它来生成添加 filter 的索引
+# 2. remove_filter() 用它来获取索引，从而删除指定的 filter
+# 3. has_filter()	 用它来获取索引，从而判定是否存在响应 filter
 function _wp_filter_build_unique_id($tag, $function, $priority) {
 	global $wp_filter;
 	static $filter_id_count = 0;
 
-	if ( is_string($function) )
+	if ( is_string($function) )	# 大多数情况下，这里都为true
 		return $function;
 
 	if ( is_object($function) ) {
@@ -928,9 +940,10 @@ function _wp_filter_build_unique_id($tag, $function, $priority) {
 
 	if (is_object($function[0]) ) {
 		// Object Class Calling
-		if ( function_exists('spl_object_hash') ) {
+		if ( function_exists('spl_object_hash') ) { # PHP 5.2.0 以上版本都包含 spl_object_hash()
+			# spl_object_hash() 返回指定对象的 hash id，详见： http://php.net/manual/zh/function.spl-object-hash.php
 			return spl_object_hash($function[0]) . $function[1];
-		} else {
+		} else { # 下面这个分支可以忽略不看（除非 PHP 5.2.0 以下的版本，否则不会走到这里）
 			$obj_idx = get_class($function[0]).$function[1];
 			if ( !isset($function[0]->wp_filter_id) ) {
 				if ( false === $priority )
