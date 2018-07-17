@@ -56,7 +56,8 @@ final class WP_Hook implements Iterator, ArrayAccess {
 	 * @since 4.7.0
 	 * @var array
 	 */
-	# 见下面关于 $nesting_level 的注释
+	# $iterations 的元素个数同下面 $nesting_level 的值（即 filter 嵌套层数），其中每一个元素储存相应嵌套层 $callbacks 的第一维索引（即优先级列表）。
+	# 关于 filter 嵌套请参见下面关于 $nesting_level 的注释。
 	private $iterations = array();
 
 	/**
@@ -65,7 +66,8 @@ final class WP_Hook implements Iterator, ArrayAccess {
 	 * @since 4.7.0
 	 * @var array
 	 */
-	# 见下面关于 $nesting_level 的注释
+	# $current_priority 的元素个数也同下面 $nesting_level 的值（即 filter 嵌套层数），其中每一个元素存储相应嵌套层的当前优先级级别。
+	# 关于 filter 嵌套请参见下面关于 $nesting_level 的注释。
 	private $current_priority = array();
 
 	/**
@@ -118,6 +120,7 @@ final class WP_Hook implements Iterator, ArrayAccess {
 			ksort( $this->callbacks, SORT_NUMERIC );
 		}
 
+		# 如果 add_filter() 调用 源自回调函数内部（嵌套）调用，新增加 filter 后，需要调整外层 iterations 中的优先级排序
 		if ( $this->nesting_level > 0 ) {
 			$this->resort_active_iterations( $priority, $priority_existed );
 		}
@@ -167,7 +170,15 @@ final class WP_Hook implements Iterator, ArrayAccess {
 			}
 
 			# 前面重新设置了 $iteration 的值，这回导致它原来的 current 指针被重置，前面记录了旧的 $current 值，
-			# 这里将 current 指针移回原来的位置（有可能原来的元素已被删除，那么移回原来下一个值）
+			# 这里将 current 指针移回原来的位置（有可能原来的元素已被删除，那么移回原来下一个值）。
+			# 这意味着，若添加了较高优先级（数字越小）的新 filter ，将不会被执行；而添加的较低优先级（数字越大）的新filter，将会被执行，例如：
+			#   add_filter('tagx', 'foo', 10, 1);
+			#   function foo() {
+			#       add_filter('tagy', 'bar', 9, 1);
+			#       add_filter('tagz', 'qux', 11, 1);
+			# 	}
+			#   apply_filters('anything', array(123));		# 首先调用 foo()，再调用 qux()，bar()不会被调用
+			# 这一点感觉很奇怪哦！不过若不还原 $iteration 的话，就会进入递归死循环，更糟糕！
 			while ( current( $iteration ) < $current ) {
 				if ( false === next( $iteration ) ) {
 					break;
@@ -175,6 +186,8 @@ final class WP_Hook implements Iterator, ArrayAccess {
 			}
 
 			// If we have a new priority that didn't exist, but ::apply_filters() or ::do_action() thinks it's the current priority...
+			# 搜索源码，resort_active_iterations() 调用总共 3 处，只有 add_filter() 中的调用显式指定了参数，
+			# 想不明白：如果是新添加的 filter ，$this->current_priority 中怎么可能有与新优先级相同的元素，bug？？？
 			if ( $new_priority === $this->current_priority[ $index ] && ! $priority_existed ) {
 				/*
 				 * ... and the new priority is the same as what $this->iterations thinks is the previous
