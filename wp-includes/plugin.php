@@ -23,38 +23,23 @@
 
 # 此文件中主要包含一系列 插件（Plugin）相关 API 。
 #
-# 在 WordPress 中 插件 是通过 Hook 机制实现的，WordPress 中的 Hook 又分为两类：
+# 在 WordPress 中 插件 是通过 Hook 机制（见 class-wp-hook.php）实现的，WordPress 中的 Hook 又分为两类：
 # 1. Actions：允许添加数据内容或改变 WordPress 原操作行为，例如：输出内容给用户，向数据库中插入数据等。
 # 2. Filters：较为独立的过程，接受输入，产生输出（例如：装饰输出给用户的内容），但不允许修改全局变量。
 #
 # 其中重点阅读以下几个 API：
-# - add_filter()    : 注册一个 Filter
-# - apply_filters() :
-# - add_action()    :
-# - do_action()     :
-#
-# 如果你不熟悉 Hook 机制，可以这样理解：
-#   Hook 的中文就是鱼钩、钩子，你在鱼钩上挂上不同的诱饵，就能钓到不同种类的鱼。
-#   不同的 Actions 或 Filters 就像不同的诱饵，
-#   - 你将它们挂在鱼钩上（调用 add_filter() 或 add_action()）
-#   - 待鱼咬钩时起竿收鱼（调用 apply_filters() 或 do_action()）
-#   一个 Hook （鱼钩）上可以有多个“钩”，像这样的：
-#   	https://assets.academy.com/mgen/42/10065442.jpg
-#
-# 关于 Hook 的更多描述请参考：
-#    https://developer.wordpress.org/plugins/hooks/
+# - add_filter()    : 注册 Filter
+# - apply_filters() : 调用所有 filters 的回调函数
+# - add_action()    : 注册 action
+# - do_action()     : 调用 action 的回调函数
 
 // Initialize the filter globals.
 # 加载 includes/class-wp-hook.php 文件，其中定义了 WP_Hook 类（class）。
-# WP_Hook 类实现了 Hook 对象的存储结构和访问方法（单个 Hook 对象中可以包含多个 Actions 或 Filters，
-#   它们的执行顺序为：
-#   1. 先执行优先级高的 Actions 或 Filters
-#   2. 相同优先级的 Actions 或 Filters，按添加（注册）顺序依次执行
-# ）
 require( dirname( __FILE__ ) . '/class-wp-hook.php' );
 
 /** @var WP_Hook[] $wp_filter */
-# 定义全局变量： $wp_filter, $wp_actions 和 $wp_current_filter 数组类型，用于存储所有的 Hook 对象
+# $wp_filter 用于存储所有的 Hook 对象（包括 Action 和 Filter 类型的）列表（不要被它的名字骗了，$wp_filter 应该命名为 $wp_hooks 才对）
+# $wp_actions 用于存储 Hooks （专指 Action 类型的 Hooks）被执行的次数(命名真的误导人)
 global $wp_filter, $wp_actions, $wp_current_filter;
 
 if ( $wp_filter ) {
@@ -133,15 +118,15 @@ if ( ! isset( $wp_current_filter ) )
  * @param int      $accepted_args   Optional. The number of arguments the function accepts. Default 1.
  * @return true
  */
-# add_filter() 用于注册一个 filter ，其参数说明如下：
-# - $tag: 用于标识一个 Hook ，多个 Actions 或 Filters 可以挂在同一个 Hook 上
+# 添加（注册）一个 filter ，其参数说明如下：
+# - $tag: 用于标识一个 Hook 对象，一个 Hook 上可以挂多个 Actions 或 Filters
 # - $function_to_add: 回调函数，当执行 apply_filters() 时，该 filter 的回调函数会被调用
 # - $priority: 优先级(值越小，优先级越高)，用于控制同一个 Hook 中多个 filters 的回调函数的执行顺序
 # - $accepted_args: 回调函数的参数个数
 function add_filter( $tag, $function_to_add, $priority = 10, $accepted_args = 1 ) {
 	global $wp_filter;
 	if ( ! isset( $wp_filter[ $tag ] ) ) {
-		$wp_filter[ $tag ] = new WP_Hook(); # $wp_filter 这个全局数组来存储所有的 Hooks
+		$wp_filter[ $tag ] = new WP_Hook(); # $wp_filter 这个全局数组来存储所有的 Filter 类型 Hooks
 	}
 	# filter 相关的信息记录在 Hook 对象中
 	$wp_filter[ $tag ]->add_filter( $tag, $function_to_add, $priority, $accepted_args );
@@ -165,8 +150,6 @@ function add_filter( $tag, $function_to_add, $priority = 10, $accepted_args = 1 
  *                   return value.
  */
 # 判断某个 filter 信息是否已注册
-# 如果 $function_to_check 为 false ，则检查挂在该 Hook 下所有 filters ：
-#    是否存在包含回调函数的 filter
 function has_filter($tag, $function_to_check = false) {
 	global $wp_filter;
 
@@ -212,26 +195,26 @@ function has_filter($tag, $function_to_check = false) {
  * @param mixed  $var,... Additional variables passed to the functions hooked to `$tag`.
  * @return mixed The filtered value after all hooked functions are applied to it.
  */
-# 调用注册时绑定在 filter hook 上的回调函数
+# 调用 Filters 的回调函数
 function apply_filters( $tag, $value ) {
 	global $wp_filter, $wp_current_filter;
 
 	$args = array();
 
 	// Do 'all' actions first.
-	if ( isset($wp_filter['all']) ) {
+	if ( isset($wp_filter['all']) ) {  # 如果有注册 tag 为 "all" 的 filter，则优先处理它
 		$wp_current_filter[] = $tag;
 		$args = func_get_args();
 		_wp_call_all_hook($args);
 	}
 
-	if ( !isset($wp_filter[$tag]) ) {
+	if ( !isset($wp_filter[$tag]) ) {	# 如果 $tag 未注册，则返回
 		if ( isset($wp_filter['all']) )
 			array_pop($wp_current_filter);
 		return $value;
 	}
 
-	if ( !isset($wp_filter['all']) )
+	if ( !isset($wp_filter['all']) )	# 如果上面的条件都不是真的，存储当前 $tag (入栈)
 		$wp_current_filter[] = $tag;
 
 	if ( empty($args) )
@@ -240,7 +223,7 @@ function apply_filters( $tag, $value ) {
 	// don't pass the tag name to WP_Hook
 	array_shift( $args );
 
-	$filtered = $wp_filter[ $tag ]->apply_filters( $value, $args );
+	$filtered = $wp_filter[ $tag ]->apply_filters( $value, $args );	# $value 同 $args[0]
 
 	array_pop( $wp_current_filter );
 
@@ -262,6 +245,7 @@ function apply_filters( $tag, $value ) {
  * @param array  $args The arguments supplied to the functions hooked to $tag.
  * @return mixed The filtered value after all hooked functions are applied to it.
  */
+# 同 apply_filters() 函数，差别在于这里的函数第二个参数为数组类型
 function apply_filters_ref_array($tag, $args) {
 	global $wp_filter, $wp_current_filter;
 
@@ -308,6 +292,7 @@ function apply_filters_ref_array($tag, $args) {
  * @param int      $priority           Optional. The priority of the function. Default 10.
  * @return bool    Whether the function existed before it was removed.
  */
+# 删除单个 filter
 function remove_filter( $tag, $function_to_remove, $priority = 10 ) {
 	global $wp_filter;
 
@@ -333,6 +318,7 @@ function remove_filter( $tag, $function_to_remove, $priority = 10 ) {
  * @param int|bool $priority Optional. The priority number to remove. Default false.
  * @return true True when finished.
  */
+# 删除某个 $tag (Hook 对象)下的所有 filters
 function remove_all_filters( $tag, $priority = false ) {
 	global $wp_filter;
 
@@ -461,7 +447,7 @@ function add_action($tag, $function_to_add, $priority = 10, $accepted_args = 1) 
 function do_action($tag, $arg = '') {
 	global $wp_filter, $wp_actions, $wp_current_filter;
 
-	if ( ! isset($wp_actions[$tag]) )
+	if ( ! isset($wp_actions[$tag]) )	# 记录 action 执行的次数
 		$wp_actions[$tag] = 1;
 	else
 		++$wp_actions[$tag];
@@ -924,6 +910,7 @@ function _wp_call_all_hook($args) {
 # 1. add_filter()	 用它来生成添加 filter 的索引
 # 2. remove_filter() 用它来获取索引，从而删除指定的 filter
 # 3. has_filter()	 用它来获取索引，从而判定是否存在响应 filter
+# 个人觉得这个函数应该放入 wp-includes/class-wp-hook.php 中才对。
 function _wp_filter_build_unique_id($tag, $function, $priority) {
 	global $wp_filter;
 	static $filter_id_count = 0;

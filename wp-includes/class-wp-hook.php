@@ -24,6 +24,9 @@
 # WordPress 内置了很多 Hook（存储在 $wp_filter 和 $wp_actions 两个全局变量中，见 wp-includes/plugin.php），
 # 每一个 Hook 都是 WP_Hook 类的一个实例（对象），WordPress 为它们分别都挂了一个不同的标签（tag），这些标签用作
 # $wp_filter 和 $wp_actions 的下标。
+#
+# 关于 Hook 的更多描述请参考：
+#    https://developer.wordpress.org/plugins/hooks/
 
 
 /**
@@ -136,6 +139,7 @@ final class WP_Hook implements Iterator, ArrayAccess {
 	 * @param bool     $priority_existed Optional. Flag for whether the priority already existed before the new
 	 *                                   filter was added. Default false.
 	 */
+	# 若是在 apply_filters() 中调用了 add_filter() 或 remove_filter() ，则需要调整当前迭代中的优先级列表
 	private function resort_active_iterations( $new_priority = false, $priority_existed = false ) {
 		$new_priorities = array_keys( $this->callbacks );
 
