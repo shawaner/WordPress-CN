@@ -47,10 +47,10 @@ error_reporting( E_CORE_ERROR | E_CORE_WARNING | E_COMPILE_ERROR | E_ERROR | E_W
  * If neither set of conditions is true, initiate loading the setup process.
  */
 # 判断 wp-config.php 文件是否存在：
-# 1. 若存在，则说明 WordPress 已经安装了，则加载 wp-config.php 文件
+# 1. 若存在，则说明 WordPress 已经安装过了，则加载 wp-config.php 文件
 # 2. 否则，则进入安装向导页面（安装过程见： https://shawaner.com/tech/web-dev/wordpress-tutorials-1-setup#wordpress-setup）
 if ( file_exists( ABSPATH . 'wp-config.php') ) {
-	# 加载 wp-config.php 文件，若不存在，请参阅 wp-config-sample.php 文件
+	# 加载 wp-config.php 文件（本仓库不包含此文件，请参阅 wp-config-sample.php 文件）
 	/** The config file resides in ABSPATH */
 	require_once( ABSPATH . 'wp-config.php' );
 
@@ -60,7 +60,7 @@ if ( file_exists( ABSPATH . 'wp-config.php') ) {
 	require_once( dirname( ABSPATH ) . '/wp-config.php' );
 
 } else {
-	# 启动安装向导页面，只有在首次安装时才会进入这里。
+	# 启动安装向导页面，只有在初次安装时才会进入这里。
 	# 如果使用“著名的5分安装”（https://codex.wordpress.org/zh-cn:%E5%AE%89%E8%A3%85_WordPress）也不会进入这里，
 	# 因此阅读时，可忽略代码此部分内容。
 
