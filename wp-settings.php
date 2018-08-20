@@ -107,6 +107,7 @@ wp_debug_mode();
  * @param bool $enable_advanced_cache Whether to enable loading advanced-cache.php (if present).
  *                                    Default true.
  */
+# WP_CACHE 默认为 false （在前面调用的 wp_initial_constants() 函数中设置的），首次阅读可以跳过此 if 语句
 if ( WP_CACHE && apply_filters( 'enable_loading_advanced_cache_dropin', true ) ) {
 	// For an advanced caching plugin to use. Uses a static drop-in because you would only want one.
 	WP_DEBUG ? include( WP_CONTENT_DIR . '/advanced-cache.php' ) : @include( WP_CONTENT_DIR . '/advanced-cache.php' );
@@ -131,6 +132,8 @@ require( ABSPATH . WPINC . '/pomo/mo.php' );
 
 // Include the wpdb class and, if present, a db.php database drop-in.
 global $wpdb;
+# 加载 wp-includes/wp-db.php (其中包含 wpdb 类的定义)，并初始化 $wpdb 全局变量
+# $wpdb = new wpdb( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST )
 require_wp_db();
 
 // Set the database table prefix and the format specifiers for database table columns.
@@ -138,12 +141,15 @@ $GLOBALS['table_prefix'] = $table_prefix;
 wp_set_wpdb_vars();
 
 // Start the WordPress object cache, or an external object cache if the drop-in is present.
+# 其中会加载 wp-includes/cache.php 文件，并定义 $GLOBALS['wp_object_cache'] = new WP_Object_Cache()
 wp_start_object_cache();
 
 // Attach the default filters.
+# 其中添加了大量默认的 filters 和 actions
 require( ABSPATH . WPINC . '/default-filters.php' );
 
 // Initialize multisite if enabled.
+# 通常我们只配置一个网站，因此我们可以忽略多站点逻辑，此处仅考虑 MULTISITE 为 false 的情形
 if ( is_multisite() ) {
 	require( ABSPATH . WPINC . '/class-wp-site-query.php' );
 	require( ABSPATH . WPINC . '/class-wp-network-query.php' );
@@ -153,6 +159,8 @@ if ( is_multisite() ) {
 	define( 'MULTISITE', false );
 }
 
+# register_shutdown_function() 是 PHP 的内置函数，使用它注册的函数将在脚本执行完成（或调用 exit() ）时被调用，
+# 调用顺序与注册顺序相同。详见：http://php.net/manual/en/function.register-shutdown-function.php
 register_shutdown_function( 'shutdown_action_hook' );
 
 // Stop most of WordPress from being loaded if we just want the basics.
@@ -165,6 +173,7 @@ require_once( ABSPATH . WPINC . '/class-wp-locale.php' );
 require_once( ABSPATH . WPINC . '/class-wp-locale-switcher.php' );
 
 // Run the installer if WordPress is not installed.
+# 此处针对初次安装 WordPress 的情形，其中会重定向至安装页面。为了简化阅读，我们假设已经安装过了，因此可忽略其中内容。
 wp_not_installed();
 
 // Load most of WordPress.
@@ -271,6 +280,7 @@ require( ABSPATH . WPINC . '/rest-api/fields/class-wp-rest-user-meta-fields.php'
 $GLOBALS['wp_embed'] = new WP_Embed();
 
 // Load multisite-specific files.
+# 忽略多站点情形，此处略过
 if ( is_multisite() ) {
 	require( ABSPATH . WPINC . '/ms-functions.php' );
 	require( ABSPATH . WPINC . '/ms-default-filters.php' );
@@ -279,17 +289,22 @@ if ( is_multisite() ) {
 
 // Define constants that rely on the API to obtain the default value.
 // Define must-use plugin directory constants, which may be overridden in the sunrise.php drop-in.
+# 定义了 plugin 相关 URL 和 DIR 的常量：
+#  WP_CONTENT_URL、WP_PLUGIN_DIR、WP_PLUGIN_URL
+#  WPMU_PLUGIN_DIR、WPMU_PLUGIN_URL （WU 意为 Must-Use）
 wp_plugin_directory_constants();
 
 $GLOBALS['wp_plugin_paths'] = array();
 
 // Load must-use plugins.
+# 默认情况下 wp-content 目录下并没有 mu-plugins 子目录，因此 wp_get_mu_plugins() 得到的是空数组
 foreach ( wp_get_mu_plugins() as $mu_plugin ) {
 	include_once( $mu_plugin );
 }
 unset( $mu_plugin );
 
 // Load network activated plugins.
+# 忽略多站点情形，此处略过
 if ( is_multisite() ) {
 	foreach ( wp_get_active_network_plugins() as $network_plugin ) {
 		wp_register_plugin_realpath( $network_plugin );
@@ -303,8 +318,10 @@ if ( is_multisite() ) {
  *
  * @since 2.8.0
  */
+# 下面的 action muplugins_loaded 并未被注册，除了设置 $wp_actions['muplugins_loaded'] = 1; 不会有别的操作
 do_action( 'muplugins_loaded' );
 
+# 忽略多站点情形，此处略过
 if ( is_multisite() )
 	ms_cookie_constants(  );
 

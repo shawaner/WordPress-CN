@@ -479,7 +479,9 @@ function wp_start_object_cache() {
 	global $wp_filter;
 
 	$first_init = false;
- 	if ( ! function_exists( 'wp_cache_init' ) ) {
+	# wp_cache_init() 仅在 wp-includes/cache.php 中有定义，该 if 语句之后才会 require 它
+ 	if ( ! function_exists( 'wp_cache_init' ) ) { # 默认会进入这里
+ 		# wp-content/ 下面没有 object-cache.php 文件，因此 此 if 也可以忽略
 		if ( file_exists( WP_CONTENT_DIR . '/object-cache.php' ) ) {
 			require_once ( WP_CONTENT_DIR . '/object-cache.php' );
 			if ( function_exists( 'wp_cache_init' ) ) {
@@ -503,6 +505,7 @@ function wp_start_object_cache() {
 		wp_using_ext_object_cache( true );
 	}
 
+	# 这里才会 require wp-includes/cache.php 文件
 	if ( ! wp_using_ext_object_cache() ) {
 		require_once ( ABSPATH . WPINC . '/cache.php' );
 	}
@@ -514,11 +517,11 @@ function wp_start_object_cache() {
 	 */
 	if ( ! $first_init && function_exists( 'wp_cache_switch_to_blog' ) ) {
 		wp_cache_switch_to_blog( get_current_blog_id() );
-	} elseif ( function_exists( 'wp_cache_init' ) ) {
-		wp_cache_init();
+	} elseif ( function_exists( 'wp_cache_init' ) ) { # 会到这里来，这次 wp_cache_init() 已经存在了
+		wp_cache_init(); # 其中仅包含 $GLOBALS['wp_object_cache'] = new WP_Object_Cache()
 	}
 
-	if ( function_exists( 'wp_cache_add_global_groups' ) ) {
+	if ( function_exists( 'wp_cache_add_global_groups' ) ) { # true ，也在 wp-includes/cache.php 中
 		wp_cache_add_global_groups( array( 'users', 'userlogins', 'usermeta', 'user_meta', 'useremail', 'userslugs', 'site-transient', 'site-options', 'blog-lookup', 'blog-details', 'site-details', 'rss', 'global-posts', 'blog-id-cache', 'networks', 'sites' ) );
 		wp_cache_add_non_persistent_groups( array( 'counts', 'plugins' ) );
 	}

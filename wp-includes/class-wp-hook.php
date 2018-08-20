@@ -342,7 +342,7 @@ final class WP_Hook implements Iterator, ArrayAccess {
 
 		$nesting_level = $this->nesting_level++;
 
-		# 获取优先级级别（迭代）列表（其中每一个元素中包含若干个回调函数列表，同 $this->callbacks 的第二维）
+		# 获取优先级级别（迭代）列表（其中每一个元素中包含若干个回调函数列表）
 		$this->iterations[ $nesting_level ] = array_keys( $this->callbacks );
 		$num_args = count( $args );
 
