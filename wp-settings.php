@@ -332,6 +332,7 @@ wp_cookie_constants();
 wp_ssl_constants();
 
 // Create common globals.
+# 加载 wp-includes/vars.php，其中包含判断浏览器类型的全局变量
 require( ABSPATH . WPINC . '/vars.php' );
 
 // Make taxonomies and posts available to plugins and themes.
@@ -342,9 +343,12 @@ create_initial_post_types();
 wp_start_scraping_edited_file_errors();
 
 // Register the default theme directory root
+# 主题根目录保存在 $wp_theme_directories 中（全局变量、数组）
 register_theme_directory( get_theme_root() );
 
 // Load active plugins.
+# wp_get_active_and_valid_plugins() 从 active_plugins option 中加载 plugin 目录列表
+# 加载已激活插件的 php 文件
 foreach ( wp_get_active_and_valid_plugins() as $plugin ) {
 	wp_register_plugin_realpath( $plugin );
 	include_once( $plugin );
@@ -352,13 +356,16 @@ foreach ( wp_get_active_and_valid_plugins() as $plugin ) {
 unset( $plugin );
 
 // Load pluggable functions.
+# 其中只有函数（或类）的定义，暂且忽略
 require( ABSPATH . WPINC . '/pluggable.php' );
 require( ABSPATH . WPINC . '/pluggable-deprecated.php' );
 
 // Set internal encoding.
+# 从 blog_charset option 中获取字符编码，若不存在则默认设置为 UTF-8
 wp_set_internal_encoding();
 
 // Run wp_cache_postload() if object cache is enabled and the function exists.
+# 本文件前面提到过： WP_CACHE 默认为 false
 if ( WP_CACHE && function_exists( 'wp_cache_postload' ) )
 	wp_cache_postload();
 
